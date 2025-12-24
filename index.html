@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slay Sving - Итоги Года 2024</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px #ff006e, 0 0 20px #ff006e, 0 0 40px #ff006e;
+        }
+        
+        .glow-purple {
+            text-shadow: 0 0 10px #8338ec, 0 0 20px #8338ec, 0 0 40px #8338ec;
+        }
+        
+        .gradient-border {
+            background: linear-gradient(135deg, #ff006e, #8338ec, #3a86ff);
+            padding: 3px;
+            border-radius: 24px;
+        }
+        
+        .gradient-btn {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            transition: all 0.3s ease;
+        }
+        
+        .gradient-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #8338ec, #ff006e);
+            box-shadow: 0 0 30px rgba(255, 0, 110, 0.6);
+            transform: scale(1.05);
+        }
+        
+        .gradient-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .select-btn {
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.2), rgba(131, 56, 236, 0.2));
+            border: 2px solid rgba(255, 0, 110, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .select-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.4), rgba(131, 56, 236, 0.4));
+            border-color: #ff006e;
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.4);
+        }
+        
+        .select-btn.voted {
+            background: linear-gradient(135deg, rgba(0, 245, 160, 0.2), rgba(0, 217, 245, 0.2));
+            border-color: #00f5a0;
+        }
+        
+        .nominee-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .nominee-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 0, 110, 0.5);
+            transform: translateY(-3px);
+        }
+        
+        .nominee-card.selected {
+            border-color: #ff006e;
+            background: rgba(255, 0, 110, 0.2);
+            box-shadow: 0 0 30px rgba(255, 0, 110, 0.4);
+        }
+        
+        .avatar-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid transparent;
+            background: linear-gradient(135deg, #ff006e, #8338ec) border-box;
+        }
+        
+        .avatar-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 0, 110, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(255, 0, 110, 0.8), 0 0 45px rgba(131, 56, 236, 0.6); }
+        }
+        
+        .nominees-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, opacity 0.3s ease;
+            opacity: 0;
+        }
+        
+        .nominees-container.open {
+            max-height: 1000px;
+            opacity: 1;
+            padding-top: 1.5rem;
+        }
+        
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .category-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .category-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .slide-in {
+            animation: slideIn 0.4s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon-float {
+            animation: iconFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .vote-btn {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            transition: all 0.3s ease;
+        }
+
+        .vote-btn:hover:not(:disabled) {
+            box-shadow: 0 0 30px rgba(255, 0, 110, 0.6);
+            transform: scale(1.05);
+        }
+
+        .vote-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .chevron {
+            transition: transform 0.3s ease;
+        }
+
+        .chevron.open {
+            transform: rotate(180deg);
+        }
+
+        .admin-panel {
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+        }
+
+        .result-bar {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            transition: width 1s ease-out;
+        }
+
+        .modal {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .winner-glow {
+            animation: winnerGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes winnerGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 0, 110, 0.4); }
+        }
+    </style>
+</head>
+<body class="text-white overflow-x-hidden">
+    <!-- Stars Background -->
+    <div id="stars" class="fixed inset-0 pointer-events-none"></div>
+    
+    <!-- Admin Button (hidden in corner) -->
+    <button onclick="showAdminLogin()" class="fixed bottom-4 right-4 w-10 h-10 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-500 hover:text-white transition-all text-xs z-50">
+        ⚙️
+    </button>
+
+    <!-- Header -->
+    <header class="relative py-8 text-center">
+        <div class="floating inline-block">
+            <h1 class="text-5xl md:text-7xl font-black">
+                <span class="glow-text text-pink-500">SLAY</span>
+                <span class="glow-purple text-purple-500">SVING</span>
+            </h1>
+        </div>
+        <p class="mt-4 text-xl text-gray-400 tracking-widest">✨ ИТОГИ ГОДА 2024 ✨</p>
+        <div class="mt-6 flex justify-center gap-4 flex-wrap px-4">
+            <span class="px-4 py-2 rounded-full bg-pink-500/20 text-pink-400 text-sm">🔥 Голосование открыто</span>
+            <span id="progressBadge" class="px-4 py-2 rounded-full bg-purple-500/20 text-purple-400 text-sm">📊 Прогресс: 0/6</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 pb-20">
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-20">
+            <div class="text-4xl mb-4 animate-spin">⏳</div>
+            <p class="text-gray-400">Загрузка...</p>
+        </div>
+
+        <!-- Categories Container -->
+        <div id="categoriesContainer" class="space-y-6 hidden">
+            <!-- Categories will be generated by JS -->
+        </div>
+
+        <!-- Submit All Button -->
+        <div class="text-center mt-12">
+            <button id="submitAllBtn" onclick="submitAllVotes()" class="gradient-btn px-12 py-4 rounded-full text-xl font-bold hidden" disabled>
+                🚀 ОТПРАВИТЬ ВСЕ ГОЛОСА
+            </button>
+            <p id="submitHint" class="text-gray-500 mt-2 hidden">Выберите номинантов во всех категориях</p>
+        </div>
+
+        <!-- Thank You Message -->
+        <div id="thankYouMessage" class="hidden text-center mt-12">
+            <div class="gradient-border inline-block">
+                <div class="bg-gray-900 rounded-3xl p-8 md:p-12">
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h2 class="text-3xl md:text-4xl font-bold glow-text mb-4">Спасибо за участие!</h2>
+                    <p class="text-gray-400 text-lg">Ваш голос успешно записан.<br>Результаты будут объявлены позже!</p>
+                    <div class="mt-6 text-4xl">💖✨🏆</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 rounded-3xl p-8 max-w-md w-full border border-gray-700">
+            <h2 class="text-2xl font-bold mb-6 text-center">🔐 Вход для администратора</h2>
+            <input type="password" id="adminPassword" placeholder="Введите пароль" 
+                class="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white mb-4 focus:border-pink-500 focus:outline-none">
+            <div class="flex gap-4">
+                <button onclick="closeAdminLogin()" class="flex-1 px-6 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition">Отмена</button>
+                <button onclick="checkAdminPassword()" class="flex-1 px-6 py-3 rounded-xl gradient-btn font-semibold">Войти</button>
+            </div>
+            <p id="adminError" class="text-red-500 text-center mt-4 hidden">Неверный пароль!</p>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanel" class="admin-panel fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="min-h-screen p-4 md:p-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold glow-text">📊 Результаты голосования</h2>
+                    <button onclick="closeAdminPanel()" class="px-4 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 transition">✕ Закрыть</button>
+                </div>
+                
+                <div id="resultsContainer" class="space-y-8">
+                    <!-- Results will be generated by JS -->
+                </div>
+
+                <div class="mt-8 p-6 rounded-2xl bg-gray-800/50 border border-gray-700">
+                    <h3 class="text-xl font-bold mb-4">📈 Общая статистика</h3>
+                    <p class="text-gray-400">Всего проголосовало: <span id="totalVoters" class="text-white font-bold">0</span> человек</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-8 text-gray-500">
+        <p>Made with 💖 by Slay Sving Team</p>
+        <p class="text-sm mt-2">© 2024 Все права защищены</p>
+    </footer>
+
+    <script>
+        // =====================================================
+        // ⚙️ НАСТРОЙКИ - ИЗМЕНИ ЭТО ПОД СЕБЯ!
+        // =====================================================
+        
+        // 🔑 Пароль для админ-панели (поменяй на свой!)
+        const ADMIN_PASSWORD = 'slay2024admin';
+        
+        // 🗄️ Supabase настройки
+        const SUPABASE_URL = 'https://edpeyxvrfgchbxzwqirc.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_K7X0ZsSqvI86MJKBTZH34w_acNECpdB';
+        
+        // 👥 НОМИНАНТЫ - ДОБАВЬ СВОИХ ЛЮДЕЙ И ИХ ФОТО!
+        // Для фото можешь использовать:
+        // - Ссылки на фото из интернета
+        // - Загрузить фото на imgur.com и вставить ссылку
+        // - Или оставить photo: null для отображения первой буквы имени
+        
+        const categories = [
+            {
+                id: 'person_of_year',
+                name: 'Человек Года',
+                icon: '👑',
+                question: 'Кто заслуживает звание Человека Года?',
+                nominees: [
+                    { id: 1, name: 'Александр', photo: null },  // null = покажет букву "А"
+                    { id: 2, name: 'Мария', photo: null },
+                    { id: 3, name: 'Дмитрий', photo: null },
+                    { id: 4, name: 'Анна', photo: null },
+                    { id: 5, name: 'Никита', photo: null },
+                    { id: 6, name: 'София', photo: null }
+                    // Добавь больше людей или удали лишних!
+                ]
+            },
+            {
+                id: 'style_icon',
+                name: 'Икона Стиля',
+                icon: '💅',
+                question: 'Кто одевается лучше всех?',
+                nominees: [
+                    { id: 1, name: 'Виктория', photo: null },
+                    { id: 2, name: 'Максим', photo: null },
+                    { id: 3, name: 'Елена', photo: null },
+                    { id: 4, name: 'Артём', photo: null },
+                    { id: 5, name: 'Полина', photo: null },
+                    { id: 6, name: 'Даниил', photo: null }
+                ]
+            },
+            {
+                id: 'party_soul',
+                name: 'Душа Компании',
+                icon: '🎉',
+                question: 'С кем никогда не бывает скучно?',
+                nominees: [
+                    { id: 1, name: 'Кирилл', photo: null },
+                    { id: 2, name: 'Алиса', photo: null },
+                    { id: 3, name: 'Иван', photo: null },
+                    { id: 4, name: 'Дарья', photo: null },
+                    { id: 5, name: 'Егор', photo: null },
+                    { id: 6, name: 'Ксения', photo: null }
+                ]
+            },
+            {
+                id: 'best_friend',
+                name: 'Лучший Друг',
+                icon: '💕',
+                question: 'На кого всегда можно положиться?',
+                nominees: [
+                    { id: 1, name: 'Андрей', photo: null },
+                    { id: 2, name: 'Екатерина', photo: null },
+                    { id: 3, name: 'Михаил', photo: null },
+                    { id: 4, name: 'Ольга', photo: null },
+                    { id: 5, name: 'Сергей', photo: null },
+                    { id: 6, name: 'Татьяна', photo: null }
+                ]
+            },
+            {
+                id: 'funniest',
+                name: 'Самый Смешной',
+                icon: '😂',
+                question: 'Кто заставляет всех смеяться?',
+                nominees: [
+                    { id: 1, name: 'Денис', photo: null },
+                    { id: 2, name: 'Юлия', photo: null },
+                    { id: 3, name: 'Павел', photo: null },
+                    { id: 4, name: 'Наталья', photo: null },
+                    { id: 5, name: 'Роман', photo: null },
+                    { id: 6, name: 'Вероника', photo: null }
+                ]
+            },
+            {
+                id: 'talent',
+                name: 'Самый Талантливый',
+                icon: '🎨',
+                question: 'Кто обладает невероятным талантом?',
+                nominees: [
+                    { id: 1, name: 'Алексей', photo: null },
+                    { id: 2, name: 'Марина', photo: null },
+                    { id: 3, name: 'Владислав', photo: null },
+                    { id: 4, name: 'Анастасия', photo: null },
+                    { id: 5, name: 'Глеб', photo: null },
+                    { id: 6, name: 'Валерия', photo: null }
+                ]
+            }
+        ];
+        
+        // =====================================================
+        // 🔧 КОД САЙТА (не меняй если не знаешь что делаешь)
+        // =====================================================
+
+        let supabase = null;
+        let openCategory = null;
+        let selectedNominees = {};
+        let hasSubmitted = false;
+        let voterId = localStorage.getItem('slaySvingVoterId');
+
+        // Generate unique voter ID
+        if (!voterId) {
+            voterId = 'voter_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('slaySvingVoterId', voterId);
+        }
+
+        // Initialize Supabase
+        function initSupabase() {
+            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                return true;
+            }
+            return false;
+        }
+
+        // Check if user already voted
+        async function checkIfVoted() {
+            if (!supabase) {
+                hasSubmitted = localStorage.getItem('slaySvingSubmitted') === 'true';
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('votes')
+                    .select('*')
+                    .eq('voter_id', voterId)
+                    .limit(1);
+
+                if (data && data.length > 0) {
+                    hasSubmitted = true;
+                    localStorage.setItem('slaySvingSubmitted', 'true');
+                }
+            } catch (e) {
+                console.log('Supabase not configured yet');
+            }
+        }
+
+        // Initialize stars
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 80; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                star.style.width = Math.random() * 3 + 2 + 'px';
+                star.style.height = star.style.width;
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Get avatar HTML
+        function getAvatarHTML(nominee, size = 60) {
+            if (nominee.photo) {
+                return `<img src="${nominee.photo}" alt="${nominee.name}" class="avatar-img pulse-glow" style="width:${size}px;height:${size}px;">`;
+            } else {
+                return `<div class="avatar-placeholder pulse-glow" style="width:${size}px;height:${size}px;">${nominee.name.charAt(0)}</div>`;
+            }
+        }
+
+        // Update progress
+        function updateProgress() {
+            const votedCount = Object.keys(selectedNominees).length;
+            document.getElementById('progressBadge').textContent = `📊 Прогресс: ${votedCount}/${categories.length}`;
+            
+            const submitBtn = document.getElementById('submitAllBtn');
+            const submitHint = document.getElementById('submitHint');
+            
+            if (votedCount > 0 && !hasSubmitted) {
+                submitBtn.classList.remove('hidden');
+                submitHint.classList.remove('hidden');
+                
+                if (votedCount === categories.length) {
+                    submitBtn.disabled = false;
+                    submitHint.classList.add('hidden');
+                } else {
+                    submitBtn.disabled = true;
+                }
+            }
+        }
+
+        // Render all categories
+        function renderCategories() {
+            document.getElementById('loadingState').classList.add('hidden');
+            
+            if (hasSubmitted) {
+                document.getElementById('categoriesContainer').classList.add('hidden');
+                document.getElementById('thankYouMessage').classList.remove('hidden');
+                document.getElementById('submitAllBtn').classList.add('hidden');
+                document.getElementById('submitHint').classList.add('hidden');
+                document.getElementById('progressBadge').textContent = '✅ Голосование завершено';
+                return;
+            }
+
+            const container = document.getElementById('categoriesContainer');
+            container.classList.remove('hidden');
+            
+            container.innerHTML = categories.map((category, index) => {
+                const isOpen = openCategory === category.id;
+                const votedFor = selectedNominees[category.id];
+                const votedNominee = votedFor ? category.nominees.find(n => n.id === votedFor) : null;
+                
+                return `
+                    <div class="category-card rounded-3xl p-6 slide-in" style="animation-delay: ${index * 0.1}s">
+                        <!-- Question Header -->
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="text-5xl icon-float">${category.icon}</div>
+                            <div class="flex-1">
+                                <h2 class="text-xl md:text-2xl font-bold text-white">${category.name}</h2>
+                                <p class="text-gray-400">${category.question}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Select Button -->
+                        <button onclick="toggleCategory('${category.id}')" 
+                            class="select-btn ${votedFor ? 'voted' : ''} w-full py-4 px-6 rounded-2xl font-semibold text-lg flex items-center justify-between">
+                            <span>
+                                ${votedFor ? 
+                                    `<span class="flex items-center gap-3">
+                                        ${getAvatarHTML(votedNominee, 40)}
+                                        <span class="text-green-400">${votedNominee.name}</span>
+                                        <span class="text-gray-500">— выбрано ✓</span>
+                                    </span>` : 
+                                    '🎯 Выбрать номинанта'}
+                            </span>
+                            <svg class="chevron w-6 h-6 ${isOpen ? 'open' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Nominees Container -->
+                        <div class="nominees-container ${isOpen ? 'open' : ''}" id="nominees-${category.id}">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                ${category.nominees.map(nominee => `
+                                    <div class="nominee-card rounded-xl p-4 cursor-pointer ${selectedNominees[category.id] === nominee.id ? 'selected' : ''}"
+                                        onclick="selectNominee('${category.id}', ${nominee.id})">
+                                        <div class="flex items-center gap-3">
+                                            ${getAvatarHTML(nominee)}
+                                            <div class="flex-1">
+                                                <h3 class="font-bold text-white">${nominee.name}</h3>
+                                            </div>
+                                            ${selectedNominees[category.id] === nominee.id ? 
+                                                '<span class="text-pink-500 text-xl">✓</span>' : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <!-- Confirm Button -->
+                            <div class="mt-4 text-center">
+                                <button onclick="confirmVote('${category.id}')" 
+                                    class="vote-btn px-8 py-3 rounded-full font-semibold ${!selectedNominees[category.id] ? 'opacity-50 cursor-not-allowed' : ''}"
+                                    ${!selectedNominees[category.id] ? 'disabled' : ''}>
+                                    ✨ Подтвердить выбор
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            updateProgress();
+        }
+
+        // Toggle category
+        function toggleCategory(categoryId) {
+            openCategory = openCategory === categoryId ? null : categoryId;
+            renderCategories();
+        }
+
+        // Select nominee
+        function selectNominee(categoryId, nomineeId) {
+            selectedNominees[categoryId] = nomineeId;
+            renderCategories();
+        }
+
+        // Confirm vote for category
+        function confirmVote(categoryId) {
+            if (!selectedNominees[categoryId]) return;
+            createConfetti(20);
+            openCategory = null;
+            renderCategories();
+        }
+
+        // Submit all votes
+        async function submitAllVotes() {
+            if (Object.keys(selectedNominees).length < categories.length) return;
+            
+            const submitBtn = document.getElementById('submitAllBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Отправка...';
+
+            // Prepare votes data
+            const votesData = {
+                voter_id: voterId,
+                votes: selectedNominees,
+                created_at: new Date().toISOString()
+            };
+
+            // Save to Supabase if configured
+            if (supabase) {
+                try {
+                    const { error } = await supabase.from('votes').insert([votesData]);
+                    if (error) throw error;
+                } catch (e) {
+                    console.error('Error saving vote:', e);
+                    alert('Ошибка при сохранении. Попробуйте ещё раз.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '🚀 ОТПРАВИТЬ ВСЕ ГОЛОСА';
+                    return;
+                }
+            } else {
+                // Fallback: save to localStorage only
+                const allVotes = JSON.parse(localStorage.getItem('slaySvingAllVotes') || '[]');
+                allVotes.push(votesData);
+                localStorage.setItem('slaySvingAllVotes', JSON.stringify(allVotes));
+            }
+
+            localStorage.setItem('slaySvingSubmitted', 'true');
+            hasSubmitted = true;
+            
+            createConfetti(100);
+            
+            setTimeout(() => {
+                renderCategories();
+            }, 500);
+        }
+
+        // Admin functions
+        function showAdminLogin() {
+            document.getElementById('adminLoginModal').classList.remove('hidden');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('adminError').classList.add('hidden');
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('adminLoginModal').classList.add('hidden');
+        }
+
+        function checkAdminPassword() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                closeAdminLogin();
+                showAdminPanel();
+            } else {
+                document.getElementById('adminError').classList.remove('hidden');
+            }
+        }
+
+        async function showAdminPanel() {
+            document.getElementById('adminPanel').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            await loadResults();
+        }
+
+        function closeAdminPanel() {
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        async function loadResults() {
+            let allVotes = [];
+
+            if (supabase) {
+                try {
+                    const { data, error } = await supabase.from('votes').select('*');
+                    if (data) allVotes = data;
+                } catch (e) {
+                    console.log('Error loading results');
+                }
+            } else {
+                allVotes = JSON.parse(localStorage.getItem('slaySvingAllVotes') || '[]');
+            }
+
+            document.getElementById('totalVoters').textContent = allVotes.length;
+
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            resultsContainer.innerHTML = categories.map(category => {
+                // Count votes for each nominee
+                const voteCounts = {};
+                category.nominees.forEach(n => voteCounts[n.id] = 0);
+                
+                allVotes.forEach(vote => {
+                    const nomineeId = vote.votes[category.id];
+                    if (nomineeId && voteCounts[nomineeId] !== undefined) {
+                        voteCounts[nomineeId]++;
+                    }
+                });
+
+                // Sort by votes
+                const sortedNominees = [...category.nominees].sort((a, b) => voteCounts[b.id] - voteCounts[a.id]);
+                const maxVotes = Math.max(...Object.values(voteCounts), 1);
+                const totalVotesInCategory = Object.values(voteCounts).reduce((a, b) => a + b, 0);
+
+                return `
+                    <div class="bg-gray-800/50 rounded-2xl p-6 border border-gray-700">
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="text-4xl">${category.icon}</span>
+                            <h3 class="text-xl font-bold">${category.name}</h3>
+                        </div>
+                        <div class="space-y-4">
+                            ${sortedNominees.map((nominee, index) => {
+                                const votes = voteCounts[nominee.id];
+                                const percentage = totalVotesInCategory > 0 ? Math.round((votes / totalVotesInCategory) * 100) : 0;
+                                const barWidth = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+                                const isWinner = index === 0 && votes > 0;
+                                
+                                return `
+                                    <div class="${isWinner ? 'winner-glow rounded-xl p-3 bg-yellow-500/10' : ''}">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            ${index === 0 && votes > 0 ? '<span class="text-2xl">🥇</span>' : 
+                                              index === 1 && votes > 0 ? '<span class="text-2xl">🥈</span>' : 
+                                              index === 2 && votes > 0 ? '<span class="text-2xl">🥉</span>' : 
+                                              '<span class="w-8"></span>'}
+                                            ${getAvatarHTML(nominee, 40)}
+                                            <span class="font-semibold flex-1">${nominee.name}</span>
+                                            <span class="text-pink-400 font-bold">${votes} голосов (${percentage}%)</span>
+                                        </div>
+                                        <div class="h-3 bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="result-bar h-full rounded-full" style="width: ${barWidth}%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Create confetti
+        function createConfetti(count = 50) {
+            const colors = ['#ff006e', '#8338ec', '#3a86ff', '#00f5a0', '#ffbe0b', '#fb5607'];
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.cssText = `
+                    left: ${Math.random() * 100}vw;
+                    top: -10px;
+                    width: ${Math.random() * 10 + 5}px;
+                    height: ${Math.random() * 10 + 5}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                `;
+                document.body.appendChild(confetti);
+                
+                const animation = confetti.animate([
+                    { transform: `translateY(0) rotate(0deg)`, opacity: 1 },
+                    { transform: `translateY(100vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 2000 + 2000,
+                    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                });
+                
+                animation.onfinish = () => confetti.remove();
+            }
+        }
+
+        // Handle Enter key in password field
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('adminLoginModal').classList.contains('hidden')) {
+                checkAdminPassword();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            createStars();
+            initSupabase();
+            await checkIfVoted();
+            renderCategories();
+        });
+    </script>
+</body>
+</html>
