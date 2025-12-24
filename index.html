@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slay Sving - Итоги Года 2024</title>
+    <title>Slay Sving - Итоги Года 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -250,7 +250,7 @@
                 <span class="glow-purple text-purple-500">SVING</span>
             </h1>
         </div>
-        <p class="mt-4 text-xl text-gray-400 tracking-widest">✨ ИТОГИ ГОДА 2024 ✨</p>
+        <p class="mt-4 text-xl text-gray-400 tracking-widest">✨ ИТОГИ ГОДА 2026 ✨</p>
         <div class="mt-6 flex justify-center gap-4 flex-wrap px-4">
             <span class="px-4 py-2 rounded-full bg-pink-500/20 text-pink-400 text-sm">🔥 Голосование открыто</span>
             <span id="progressBadge" class="px-4 py-2 rounded-full bg-purple-500/20 text-purple-400 text-sm">📊 Прогресс: 0/6</span>
@@ -328,8 +328,8 @@
 
     <!-- Footer -->
     <footer class="text-center py-8 text-gray-500">
-        <p>Made with 💖 by Slay Sving Team</p>
-        <p class="text-sm mt-2">© 2024 Все права защищены</p>
+        <p>Made with 💖 by <span class="text-pink-400 font-semibold">Mandlail</span></p>
+        <p class="text-sm mt-2">© 2026 Все права защищены</p>
     </footer>
 
     <script>
@@ -465,8 +465,13 @@
 
         // Check if user already voted
         async function checkIfVoted() {
+            // Always check localStorage first
+            if (localStorage.getItem('slaySvingSubmitted') === 'true') {
+                hasSubmitted = true;
+                return;
+            }
+            
             if (!supabase) {
-                hasSubmitted = localStorage.getItem('slaySvingSubmitted') === 'true';
                 return;
             }
 
@@ -482,7 +487,7 @@
                     localStorage.setItem('slaySvingSubmitted', 'true');
                 }
             } catch (e) {
-                console.log('Supabase not configured yet');
+                console.log('Supabase check failed, using localStorage');
             }
         }
 
@@ -820,7 +825,14 @@
         document.addEventListener('DOMContentLoaded', async () => {
             createStars();
             initSupabase();
-            await checkIfVoted();
+            
+            try {
+                await checkIfVoted();
+            } catch (e) {
+                console.log('Could not check vote status, continuing...');
+            }
+            
+            // Always render categories even if Supabase fails
             renderCategories();
         });
     </script>
