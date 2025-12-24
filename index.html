@@ -344,6 +344,14 @@
                     <h3 class="text-xl font-bold mb-4">📈 Общая статистика</h3>
                     <p class="text-gray-400">Всего проголосовало: <span id="totalVoters" class="text-white font-bold">0</span> человек</p>
                 </div>
+
+                <div class="mt-6 p-6 rounded-2xl bg-red-900/20 border border-red-900/30">
+                    <h3 class="text-xl font-bold mb-4 text-red-400">⚠️ Опасная зона</h3>
+                    <button onclick="clearAllVotes()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl transition">
+                        🗑️ Очистить все голоса
+                    </button>
+                    <p class="text-red-400 text-sm mt-2 text-center">Эту операцию нельзя отменить!</p>
+                </div>
             </div>
         </div>
     </div>
@@ -378,7 +386,7 @@
                 icon: '👑',
                 question: 'Кто заслуживает звание Человека Года?',
                 nominees: [
-                    { id: 1, name: 'Александр', photo: null },  // null = покажет букву "А"
+                    { id: 1, name: 'Александр', photo: https://koldunov.com/wp-content/uploads/2021/03/06.jpg },  // null = покажет букву "А"
                     { id: 2, name: 'Мария', photo: null },
                     { id: 3, name: 'Дмитрий', photo: null },
                     { id: 4, name: 'Анна', photo: null },

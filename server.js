@@ -75,6 +75,34 @@ app.post('/api/vote', (req, res) => {
     }
 });
 
+app.post('/api/admin/clear-votes', (req, res) => {
+    try {
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ error: 'Missing password' });
+        }
+
+        const data = readData();
+        if (password !== data.adminPassword) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        // Clear all votes
+        data.votes = [];
+
+        writeData(data);
+
+        res.json({
+            success: true,
+            message: 'All votes cleared successfully'
+        });
+    } catch (error) {
+        console.error('Error clearing votes:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.get('/api/vote/:voterId', (req, res) => {
     try {
         const { voterId } = req.params;
