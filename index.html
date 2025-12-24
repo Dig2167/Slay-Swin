@@ -456,9 +456,17 @@
 
         // Initialize Supabase
         function initSupabase() {
-            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                return true;
+            try {
+                if (typeof window.supabase !== 'undefined' && 
+                    SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && 
+                    SUPABASE_KEY && SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    console.log('Supabase connected!');
+                    return true;
+                }
+            } catch (e) {
+                console.log('Supabase init failed:', e);
+                supabase = null;
             }
             return false;
         }
@@ -475,19 +483,26 @@
                 return;
             }
 
+            // Set timeout for Supabase check
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 3000)
+            );
+
             try {
-                const { data, error } = await supabase
+                const queryPromise = supabase
                     .from('votes')
                     .select('*')
                     .eq('voter_id', voterId)
                     .limit(1);
+
+                const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
                 if (data && data.length > 0) {
                     hasSubmitted = true;
                     localStorage.setItem('slaySvingSubmitted', 'true');
                 }
             } catch (e) {
-                console.log('Supabase check failed, using localStorage');
+                console.log('Supabase check skipped:', e.message);
             }
         }
 
@@ -822,18 +837,25 @@
         });
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             createStars();
-            initSupabase();
             
-            try {
-                await checkIfVoted();
-            } catch (e) {
-                console.log('Could not check vote status, continuing...');
+            // Render immediately - don't wait for anything!
+            if (localStorage.getItem('slaySvingSubmitted') === 'true') {
+                hasSubmitted = true;
             }
-            
-            // Always render categories even if Supabase fails
             renderCategories();
+            
+            // Then try to connect Supabase in background
+            setTimeout(() => {
+                initSupabase();
+                // Background check (non-blocking)
+                checkIfVoted().then(() => {
+                    if (hasSubmitted) {
+                        renderCategories();
+                    }
+                }).catch(() => {});
+            }, 100);
         });
     </script>
 </body>
