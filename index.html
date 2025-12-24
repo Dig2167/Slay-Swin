@@ -996,10 +996,34 @@
             }
         });
 
+        // Keep-alive function for Render
+        function setupKeepAlive() {
+            // Ping server every 5 minutes to prevent sleep
+            setInterval(() => {
+                fetch('/keep-alive')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Keep-alive:', data.message);
+                    })
+                    .catch(error => {
+                        console.error('Keep-alive failed:', error);
+                    });
+            }, 300000); // 5 minutes
+
+            // Also ping every minute for more frequent activity
+            setInterval(() => {
+                fetch('/ping')
+                    .catch(error => {
+                        console.error('Ping failed:', error);
+                    });
+            }, 60000); // 1 minute
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             createStars();
             createSnow();
+            setupKeepAlive();
 
             // Render immediately - don't wait for anything!
             if (localStorage.getItem('slaySvingSubmitted') === 'true') {

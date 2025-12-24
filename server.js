@@ -191,7 +191,22 @@ app.get('/', (req, res) => {
 // Initialize data file
 initializeDataFile();
 
+// Keep-alive endpoint for Render
+app.get('/keep-alive', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Server is alive',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Simple ping endpoint
+app.get('/ping', (req, res) => {
+    res.send('pong');
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Slay Sving server running on port ${PORT}`);
     console.log(`📊 Data file: ${DATA_FILE}`);
+    console.log(`🔄 Keep-alive endpoints active: /keep-alive, /ping`);
 });
