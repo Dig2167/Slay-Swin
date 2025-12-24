@@ -83,23 +83,23 @@
         }
         
         .avatar-img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            border-radius: 0;
             object-fit: cover;
             border: 3px solid transparent;
             background: linear-gradient(135deg, #ff006e, #8338ec) border-box;
         }
         
         .avatar-placeholder {
-            width: 60px;
-            height: 60px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             background: linear-gradient(135deg, #ff006e, #8338ec);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 36px;
             font-weight: bold;
             color: white;
         }
@@ -386,7 +386,7 @@
                 icon: '👑',
                 question: 'Кто заслуживает звание Человека Года?',
                 nominees: [
-                    { id: 1, name: 'Александр', photo: https://koldunov.com/wp-content/uploads/2021/03/06.jpg },  // null = покажет букву "А"
+                    { id: 1, name: 'Александр', photo: 'https://koldunov.com/wp-content/uploads/2021/03/06.jpg' },  // null = покажет букву "А"
                     { id: 2, name: 'Мария', photo: null },
                     { id: 3, name: 'Дмитрий', photo: null },
                     { id: 4, name: 'Анна', photo: null },
@@ -557,6 +557,13 @@
             renderCategories();
         }
 
+        // Edit single vote function
+        function editSingleVote(categoryId) {
+            // Remove the vote for this category only
+            delete selectedNominees[categoryId];
+            renderCategories();
+        }
+
         // Render user's votes summary
         function renderYourVotes() {
             const container = document.getElementById('yourVotesContainer');
@@ -578,6 +585,9 @@
                                     <span class="text-pink-400 font-medium">${nominee.name}</span>
                                 </div>
                             </div>
+                            <button onclick="editSingleVote('${category.id}')" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                                ✏️ Изменить
+                            </button>
                         `;
                         container.appendChild(voteItem);
                     }
@@ -597,6 +607,43 @@
                 star.style.width = Math.random() * 3 + 2 + 'px';
                 star.style.height = star.style.width;
                 starsContainer.appendChild(star);
+            }
+        }
+
+        // Initialize snow
+        function createSnow() {
+            const snowContainer = document.createElement('div');
+            snowContainer.id = 'snow';
+            snowContainer.className = 'fixed inset-0 pointer-events-none';
+            document.body.appendChild(snowContainer);
+
+            // Add CSS animation for snowfall
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fall {
+                    0% { transform: translateY(-10px) rotate(0deg); }
+                    100% { transform: translateY(100vh) rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            for (let i = 0; i < 150; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.style.cssText = `
+                    position: absolute;
+                    left: ${Math.random() * 100}%;
+                    top: -10px;
+                    width: ${Math.random() * 8 + 3}px;
+                    height: ${Math.random() * 8 + 3}px;
+                    background: white;
+                    border-radius: 50%;
+                    opacity: ${Math.random() * 0.8 + 0.2};
+                    animation: fall ${Math.random() * 10 + 5}s linear infinite;
+                    animation-delay: ${Math.random() * 5}s;
+                    z-index: 1000;
+                `;
+                snowContainer.appendChild(snowflake);
             }
         }
 
@@ -695,13 +742,12 @@
                                 ${category.nominees.map(nominee => `
                                     <div class="nominee-card rounded-xl p-4 cursor-pointer ${selectedNominees[category.id] === nominee.id ? 'selected' : ''}"
                                         onclick="selectNominee('${category.id}', ${nominee.id})">
-                                        <div class="flex items-center gap-3">
-                                            ${getAvatarHTML(nominee)}
-                                            <div class="flex-1">
-                                                <h3 class="font-bold text-white">${nominee.name}</h3>
-                                            </div>
-                                            ${selectedNominees[category.id] === nominee.id ?
-                                                '<span class="text-pink-500 text-xl">✓</span>' : ''}
+                                        <div class="flex flex-col items-center gap-3">
+                                            ${getAvatarHTML(nominee, 100)}
+                                            <h3 class="font-bold text-white text-lg mt-2">${nominee.name}</h3>
+                                            <button class="select-btn mt-2 px-6 py-2 rounded-full text-sm font-semibold">
+                                                ${selectedNominees[category.id] === nominee.id ? '✓ Выбран' : 'Выбрать'}
+                                            </button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -953,6 +999,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             createStars();
+            createSnow();
 
             // Render immediately - don't wait for anything!
             if (localStorage.getItem('slaySvingSubmitted') === 'true') {
