@@ -12,8 +12,16 @@
         }
         
         body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #2d1b69 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
             min-height: 100vh;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         .glow-text {
@@ -128,11 +136,74 @@
             transition: max-height 0.5s ease-out, opacity 0.3s ease;
             opacity: 0;
         }
-        
+
         .nominees-container.open {
             max-height: 1000px;
             opacity: 1;
             padding-top: 1.5rem;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .nominee-modal {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 0, 110, 0.3);
+            border-radius: 24px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .modal-overlay.active .nominee-modal {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
         }
         
         .confetti {
@@ -156,14 +227,47 @@
         }
         
         .category-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: transparent;
+            backdrop-filter: none;
+            border: none;
             transition: all 0.3s ease;
         }
-        
+
         .category-card:hover {
+            background: transparent;
+        }
+
+        .category-content {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .category-content:hover {
             background: rgba(255, 255, 255, 0.05);
+        }
+
+        .avatar-img {
+            width: 200px;
+            height: 200px;
+            border-radius: 0;
+            object-fit: cover;
+            border: none;
+            background: linear-gradient(135deg, #ff006e, #8338ec) border-box;
+        }
+
+        .selection-button {
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .selection-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.4);
         }
 
         .slide-in {
@@ -230,6 +334,21 @@
             0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
             50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 0, 110, 0.4); }
         }
+
+        .pig-with-crown {
+            position: relative;
+            display: inline-block;
+            font-size: 1em;
+        }
+
+        .crown-on-pig {
+            position: absolute;
+            top: -0.3em;
+            left: 0.2em;
+            transform: rotate(-15deg);
+            font-size: 0.6em;
+            z-index: 1;
+        }
     </style>
 </head>
 <body class="text-white overflow-x-hidden">
@@ -241,20 +360,24 @@
         ⚙️
     </button>
 
-    <!-- Header -->
-    <header class="relative py-8 text-center">
-        <div class="floating inline-block">
-            <h1 class="text-5xl md:text-7xl font-black">
-                <span class="glow-text text-pink-500">SLAY</span>
-                <span class="glow-purple text-purple-500">SVING</span>
-            </h1>
-        </div>
-        <p class="mt-4 text-xl text-gray-400 tracking-widest">✨ ИТОГИ ГОДА 2026 ✨</p>
-        <div class="mt-6 flex justify-center gap-4 flex-wrap px-4">
-            <span class="px-4 py-2 rounded-full bg-pink-500/20 text-pink-400 text-sm">🔥 Голосование открыто</span>
-            <span id="progressBadge" class="px-4 py-2 rounded-full bg-purple-500/20 text-purple-400 text-sm">📊 Прогресс: 0/6</span>
-        </div>
-    </header>
+        <!-- Header -->
+        <header class="relative py-8 text-center">
+            <div class="floating inline-block">
+                <h1 class="text-5xl md:text-7xl font-black">
+                    <span class="glow-text text-pink-500">SLAY</span>
+                    <span class="glow-purple text-purple-500 relative inline-block">
+                        <span class="pig-with-crown">🐷</span>
+                        <span class="crown-on-pig">👑</span>
+                    </span>
+                    <span class="glow-purple text-purple-500"> SVING</span>
+                </h1>
+            </div>
+            <p class="mt-4 text-xl text-gray-400 tracking-widest">✨ ИТОГИ ГОДА 2026 ✨</p>
+            <div class="mt-6 flex justify-center gap-4 flex-wrap px-4">
+                <span class="px-4 py-2 rounded-full bg-pink-500/20 text-pink-400 text-sm">🔥 Голосование открыто</span>
+                <span id="progressBadge" class="px-4 py-2 rounded-full bg-purple-500/20 text-purple-400 text-sm">📊 Прогресс: 0/6</span>
+            </div>
+        </header>
 
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 pb-20">
@@ -265,7 +388,7 @@
         </div>
 
         <!-- Categories Container -->
-        <div id="categoriesContainer" class="space-y-6 hidden">
+        <div id="categoriesContainer" class="space-y-12 hidden">
             <!-- Categories will be generated by JS -->
         </div>
 
@@ -313,19 +436,20 @@
         </div>
     </main>
 
-    <!-- Admin Login Modal -->
-    <div id="adminLoginModal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gray-900 rounded-3xl p-8 max-w-md w-full border border-gray-700">
-            <h2 class="text-2xl font-bold mb-6 text-center">🔐 Вход для администратора</h2>
-            <input type="password" id="adminPassword" placeholder="Введите пароль" 
-                class="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white mb-4 focus:border-pink-500 focus:outline-none">
-            <div class="flex gap-4">
-                <button onclick="closeAdminLogin()" class="flex-1 px-6 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition">Отмена</button>
-                <button onclick="checkAdminPassword()" class="flex-1 px-6 py-3 rounded-xl gradient-btn font-semibold">Войти</button>
+
+        <!-- Admin Login Modal -->
+        <div id="adminLoginModal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-gray-900 rounded-3xl p-8 max-w-md w-full border border-gray-700">
+                <h2 class="text-2xl font-bold mb-6 text-center">🔐 Вход для администратора</h2>
+                <input type="password" id="adminPassword" placeholder="Введите пароль" 
+                    class="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white mb-4 focus:border-pink-500 focus:outline-none">
+                <div class="flex gap-4">
+                    <button onclick="closeAdminLogin()" class="flex-1 px-6 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 transition">Отмена</button>
+                    <button onclick="checkAdminPassword()" class="flex-1 px-6 py-3 rounded-xl gradient-btn font-semibold">Войти</button>
+                </div>
+                <p id="adminError" class="text-red-500 text-center mt-4 hidden">Неверный пароль!</p>
             </div>
-            <p id="adminError" class="text-red-500 text-center mt-4 hidden">Неверный пароль!</p>
         </div>
-    </div>
 
     <!-- Admin Panel Modal -->
     <div id="adminPanel" class="admin-panel fixed inset-0 z-50 hidden overflow-y-auto">
@@ -356,11 +480,39 @@
         </div>
     </div>
 
+    <!-- Nominees Selection Modal -->
+    <div id="nomineesModal" class="modal-overlay">
+        <div class="nominee-modal">
+            <div class="modal-header">
+                <div class="flex justify-between items-center">
+                    <h2 id="modalCategoryName" class="text-2xl font-bold text-white"></h2>
+                    <button onclick="closeNomineesModal()" class="text-3xl text-gray-400 hover:text-white transition">×</button>
+                </div>
+                <p id="modalCategoryQuestion" class="text-gray-300 mt-2"></p>
+            </div>
+            <div class="modal-body">
+                <div id="modalNomineesContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+            </div>
+            <div class="modal-footer">
+                <div class="flex justify-between items-center">
+                    <button onclick="closeNomineesModal()" class="px-6 py-2 rounded-full bg-gray-700 hover:bg-gray-600 transition">Отмена</button>
+                    <button id="modalConfirmBtn" onclick="confirmModalSelection()" class="px-8 py-2 rounded-full vote-btn font-semibold" disabled>✨ Подтвердить выбор</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
-    <footer class="text-center py-8 text-gray-500">
-        <p>Made with 💖 by <span class="text-pink-400 font-semibold">Mandlail</span></p>
-        <p class="text-sm mt-2">© 2026 Все права защищены</p>
+    <footer class="text-center py-8 text-gray-500 relative">
+        <div class="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-black/50 to-transparent backdrop-blur-sm"></div>
+        <div class="relative z-10">
+            <p>Made with 💖 by <span class="text-pink-400 font-semibold">Mandlail</span></p>
+            <p class="text-sm mt-2">© 2026 Все права защищены</p>
+        </div>
     </footer>
+
+    <!-- Bottom Blur Effect -->
+    <div class="fixed bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/80 to-transparent backdrop-blur-lg z-40"></div>
 
     <script>
         // =====================================================
@@ -634,12 +786,12 @@
                     position: absolute;
                     left: ${Math.random() * 100}%;
                     top: -10px;
-                    width: ${Math.random() * 8 + 3}px;
-                    height: ${Math.random() * 8 + 3}px;
+                    width: ${Math.random() * 4 + 2}px;
+                    height: ${Math.random() * 4 + 2}px;
                     background: white;
                     border-radius: 50%;
                     opacity: ${Math.random() * 0.8 + 0.2};
-                    animation: fall ${Math.random() * 10 + 5}s linear infinite;
+                    animation: fall ${Math.random() * 5 + 3}s linear infinite;
                     animation-delay: ${Math.random() * 5}s;
                     z-index: 1000;
                 `;
@@ -703,89 +855,119 @@
             const container = document.getElementById('categoriesContainer');
             container.classList.remove('hidden');
 
-            container.innerHTML = categories.map((category, index) => {
-                const isOpen = openCategory === category.id;
-                const votedFor = selectedNominees[category.id];
-                const votedNominee = votedFor ? category.nominees.find(n => n.id === votedFor) : null;
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                    ${categories.map((category, index) => {
+                        const votedFor = selectedNominees[category.id];
+                        const votedNominee = votedFor ? category.nominees.find(n => n.id === votedFor) : null;
 
-                return `
-                    <div class="category-card rounded-3xl p-6 slide-in" style="animation-delay: ${index * 0.1}s">
-                        <!-- Question Header -->
-                        <div class="flex items-center gap-4 mb-4">
-                            <div class="text-5xl icon-float">${category.icon}</div>
-                            <div class="flex-1">
-                                <h2 class="text-xl md:text-2xl font-bold text-white">${category.name}</h2>
-                                <p class="text-gray-400">${category.question}</p>
-                            </div>
-                        </div>
-
-                        <!-- Select Button -->
-                        <button onclick="toggleCategory('${category.id}')" 
-                            class="select-btn ${votedFor ? 'voted' : ''} w-full py-4 px-6 rounded-2xl font-semibold text-lg flex items-center justify-between">
-                            <span>
-                                ${votedFor ?
-                                    `<span class="flex items-center gap-3">
-                                        ${getAvatarHTML(votedNominee, 40)}
-                                        <span class="text-green-400">${votedNominee.name}</span>
-                                        <span class="text-gray-500">— выбрано ✓</span>
-                                    </span>` :
-                                    '🎯 Выбрать номинанта'}
-                            </span>
-                            <svg class="chevron w-6 h-6 ${isOpen ? 'open' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-
-                        <!-- Nominees Container -->
-                        <div class="nominees-container ${isOpen ? 'open' : ''}" id="nominees-${category.id}">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                ${category.nominees.map(nominee => `
-                                    <div class="nominee-card rounded-xl p-4 cursor-pointer ${selectedNominees[category.id] === nominee.id ? 'selected' : ''}"
-                                        onclick="selectNominee('${category.id}', ${nominee.id})">
-                                        <div class="flex flex-col items-center gap-3">
-                                            ${getAvatarHTML(nominee, 100)}
-                                            <h3 class="font-bold text-white text-lg mt-2">${nominee.name}</h3>
-                                            <button class="select-btn mt-2 px-6 py-2 rounded-full text-sm font-semibold">
-                                                ${selectedNominees[category.id] === nominee.id ? '✓ Выбран' : 'Выбрать'}
-                                            </button>
-                                        </div>
+                        return `
+                            <div class="category-card slide-in" style="animation-delay: ${index * 0.1}s">
+                                <!-- New Separated Design: Category Name and Button are separate -->
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="category-content">
+                                        ${votedFor ?
+                                            `<div class="flex flex-col items-center gap-2">
+                                                ${getAvatarHTML(votedNominee, 200)}
+                                            </div>` :
+                                            `<div class="flex flex-col items-center gap-2">
+                                                <div class="w-36 h-40 bg-gray-600 rounded-t-full flex items-end justify-center overflow-hidden">
+                                                    <div class="w-28 h-32 bg-gray-700 rounded-t-full"></div>
+                                                </div>
+                                            </div>`}
                                     </div>
-                                `).join('')}
+                                    <h3 class="category-name">${category.name}</h3>
+                                    <button onclick="openNomineesModal('${category.id}')" 
+                                        class="select-btn selection-button px-6 py-2 rounded-full font-semibold text-sm">
+                                        ${votedFor ? '🔄 Изменить выбор' : '✨ Сделать выбор'}
+                                    </button>
+                                </div>
                             </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
 
-                            <!-- Confirm Button -->
-                            <div class="mt-4 text-center">
-                                <button onclick="confirmVote('${category.id}')" 
-                                    class="vote-btn px-8 py-3 rounded-full font-semibold ${!selectedNominees[category.id] ? 'opacity-50 cursor-not-allowed' : ''}"
-                                    ${!selectedNominees[category.id] ? 'disabled' : ''}>
-                                    ✨ Подтвердить выбор
-                                </button>
-                            </div>
+            updateProgress();
+        }
+
+        // Open nominees modal
+        let currentModalCategory = null;
+
+        function openNomineesModal(categoryId) {
+            currentModalCategory = categoryId;
+            const category = categories.find(c => c.id === categoryId);
+            const modal = document.getElementById('nomineesModal');
+            const container = document.getElementById('modalNomineesContainer');
+
+            // Set modal title and question
+            document.getElementById('modalCategoryName').textContent = category.icon + ' ' + category.name;
+            document.getElementById('modalCategoryQuestion').textContent = category.question;
+
+            // Render nominees
+            container.innerHTML = category.nominees.map(nominee => {
+                const isSelected = selectedNominees[categoryId] === nominee.id;
+                return `
+                    <div class="nominee-card rounded-xl p-3 cursor-pointer ${isSelected ? 'selected' : ''}"
+                        onclick="selectModalNominee('${categoryId}', ${nominee.id})">
+                        <div class="flex flex-col items-center gap-2">
+                            ${getAvatarHTML(nominee, 80)}
+                            <h3 class="font-bold text-white text-sm mt-2">${nominee.name}</h3>
+                            <button class="select-btn mt-2 px-4 py-2 rounded-full text-sm font-semibold">
+                                ${isSelected ? '✓ Выбран' : 'Выбрать'}
+                            </button>
                         </div>
                     </div>
                 `;
             }).join('');
 
-            updateProgress();
+            // Update confirm button state
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            confirmBtn.disabled = !selectedNominees[categoryId];
+
+            // Show modal
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
-        // Toggle category
-        function toggleCategory(categoryId) {
-            openCategory = openCategory === categoryId ? null : categoryId;
-            renderCategories();
+        // Close nominees modal
+        function closeNomineesModal() {
+            const modal = document.getElementById('nomineesModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
 
-        // Select nominee
-        function selectNominee(categoryId, nomineeId) {
+        // Select nominee in modal
+        function selectModalNominee(categoryId, nomineeId) {
             selectedNominees[categoryId] = nomineeId;
-            renderCategories();
+
+            // Update UI in modal
+            const cards = document.querySelectorAll('#modalNomineesContainer .nominee-card');
+            cards.forEach(card => {
+                card.classList.remove('selected');
+                const button = card.querySelector('button');
+                button.textContent = 'Выбрать';
+                button.classList.remove('voted');
+            });
+
+            const selectedCard = document.querySelector(`#modalNomineesContainer .nominee-card:nth-child(${nomineeId})`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                const button = selectedCard.querySelector('button');
+                button.textContent = '✓ Выбран';
+                button.classList.add('voted');
+            }
+
+            // Enable confirm button
+            document.getElementById('modalConfirmBtn').disabled = false;
         }
 
-        // Confirm vote for category
-        function confirmVote(categoryId) {
-            if (!selectedNominees[categoryId]) return;
+        // Confirm selection in modal
+        function confirmModalSelection() {
+            if (!currentModalCategory || !selectedNominees[currentModalCategory]) return;
+
             createConfetti(20);
-            openCategory = null;
+            closeNomineesModal();
             renderCategories();
         }
 

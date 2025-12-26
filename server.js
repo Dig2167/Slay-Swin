@@ -17,6 +17,7 @@ function initializeDataFile() {
     if (!fs.existsSync(DATA_FILE)) {
         const initialData = {
             votes: [],
+            votedIPs: [],
             adminPassword: 'slay2024admin' // Default password, can be changed
         };
         fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
@@ -34,16 +35,34 @@ function writeData(data) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+// Get client IP address
+function getClientIp(req) {
+    return req.headers['x-forwarded-for'] ||  // For proxies
+           req.connection.remoteAddress ||    // Direct connection
+           req.socket.remoteAddress ||        // Alternative
+           req.connection.socket.remoteAddress;
+}
+
 // API Endpoints
 app.post('/api/vote', (req, res) => {
     try {
         const { voter_id, votes } = req.body;
+        const clientIp = getClientIp(req);
 
         if (!voter_id || !votes) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
         const data = readData();
+
+        // Check if this IP has already voted
+        const hasVotedByIp = data.votedIPs.includes(clientIp);
+        if (hasVotedByIp) {
+            return res.status(403).json({
+                success: false,
+                error: 'Вы уже голосовали с этого устройства'
+            });
+        }
 
         // Check if this voter already voted
         const existingVoteIndex = data.votes.findIndex(v => v.voter_id === voter_id);
@@ -52,15 +71,19 @@ app.post('/api/vote', (req, res) => {
             data.votes[existingVoteIndex] = {
                 voter_id,
                 votes,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                ip: clientIp
             };
         } else {
             // Add new vote
             data.votes.push({
                 voter_id,
                 votes,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                ip: clientIp
             });
+            // Add IP to voted list
+            data.votedIPs.push(clientIp);
         }
 
         writeData(data);
