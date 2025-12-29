@@ -18,9 +18,16 @@ function initializeDataFile() {
         const initialData = {
             votes: [],
             votedIPs: [],
-            adminPassword: 'slay2024admin' // Default password, can be changed
+            adminPassword: 'slay2026admin' // Default password, can be changed
         };
         fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
+    } else {
+        // Ensure votedIPs array exists in existing data
+        const data = readData();
+        if (!data.votedIPs) {
+            data.votedIPs = [];
+            writeData(data);
+        }
     }
 }
 
@@ -55,7 +62,26 @@ app.post('/api/vote', (req, res) => {
 
         const data = readData();
 
-        // Check if this IP has already voted
+        // Check if this voter already voted
+        const existingVoteIndex = data.votes.findIndex(v => v.voter_id === voter_id);
+        if (existingVoteIndex !== -1) {
+            // Update existing vote (allow updating without IP restriction)
+            data.votes[existingVoteIndex] = {
+                voter_id,
+                votes,
+                created_at: new Date().toISOString(),
+                ip: clientIp
+            };
+
+            writeData(data);
+
+            return res.json({
+                success: true,
+                message: 'Vote updated successfully'
+            });
+        }
+
+        // Check if this IP has already voted (only for new votes)
         const hasVotedByIp = data.votedIPs.includes(clientIp);
         if (hasVotedByIp) {
             return res.status(403).json({
@@ -64,33 +90,21 @@ app.post('/api/vote', (req, res) => {
             });
         }
 
-        // Check if this voter already voted
-        const existingVoteIndex = data.votes.findIndex(v => v.voter_id === voter_id);
-        if (existingVoteIndex !== -1) {
-            // Update existing vote
-            data.votes[existingVoteIndex] = {
-                voter_id,
-                votes,
-                created_at: new Date().toISOString(),
-                ip: clientIp
-            };
-        } else {
-            // Add new vote
-            data.votes.push({
-                voter_id,
-                votes,
-                created_at: new Date().toISOString(),
-                ip: clientIp
-            });
-            // Add IP to voted list
-            data.votedIPs.push(clientIp);
-        }
+        // Add new vote
+        data.votes.push({
+            voter_id,
+            votes,
+            created_at: new Date().toISOString(),
+            ip: clientIp
+        });
+        // Add IP to voted list
+        data.votedIPs.push(clientIp);
 
         writeData(data);
 
         res.json({
             success: true,
-            message: existingVoteIndex !== -1 ? 'Vote updated successfully' : 'Vote recorded successfully'
+            message: 'Vote recorded successfully'
         });
     } catch (error) {
         console.error('Error saving vote:', error);
@@ -111,14 +125,15 @@ app.post('/api/admin/clear-votes', (req, res) => {
             return res.status(401).json({ error: 'Invalid password' });
         }
 
-        // Clear all votes
+        // Clear all votes and voted IPs
         data.votes = [];
+        data.votedIPs = [];
 
         writeData(data);
 
         res.json({
             success: true,
-            message: 'All votes cleared successfully'
+            message: 'All votes and IP restrictions cleared successfully'
         });
     } catch (error) {
         console.error('Error clearing votes:', error);

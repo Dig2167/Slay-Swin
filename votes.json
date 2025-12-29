@@ -1,4 +1,8 @@
 {
-  "votes": [],
-  "adminPassword": "slay2026admin"
+  "votes": [
+  ],
+  "adminPassword": "slay2026admin",
+  "votedIPs": [
+    "::1"
+  ]
 }
